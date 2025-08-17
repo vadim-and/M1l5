@@ -2,59 +2,73 @@ from random import randint
 import requests
 
 class Pokemon:
-    pokemons = {}
-
+    pokemons = {} # { username : pokemon}
+    # Инициализация объекта (конструктор)
     def __init__(self, pokemon_trainer):
-        self.pokemon_trainer = pokemon_trainer
-        self.pokemon_number = randint(1, 1000)
+
+        self.pokemon_trainer = pokemon_trainer   
+
+        self.pokemon_number = randint(1,1000)
+        self.img = self.get_img()
         self.name = self.get_name()
-        self.hp = randint(50, 150) 
-        self.power = randint(10, 30)  
+
+        self.power = randint(30, 60)
+        self.hp = randint(200, 400)
+
         Pokemon.pokemons[pokemon_trainer] = self
 
+    # Метод для получения картинки покемона через API
+    def get_img(self):
+        url = f'https://pokeapi.co/api/v2/pokemon/{self.pokemon_number}'
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            return (data['sprites']["other"]['official-artwork']["front_default"])
+        else:
+            return "https://static.wikia.nocookie.net/anime-characters-fight/images/7/77/Pikachu.png/revision/latest/scale-to-width-down/700?cb=20181021155144&amp;amp;amp;path-prefix=ru"
+    
+    # Метод для получения имени покемона через API
     def get_name(self):
-        try:
-            url = f'https://pokeapi.co/api/v2/pokemon/{self.pokemon_number}'
-            response = requests.get(url)
-            response.raise_for_status()
-            return response.json()['name']
-        except Exception:
+        url = f'https://pokeapi.co/api/v2/pokemon/{self.pokemon_number}'
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            return (data['forms'][0]['name'])
+        else:
             return "Pikachu"
 
-    def info(self):
-        return f"Имя: {self.name}, Здоровье: {self.hp}, Сила: {self.power}"
 
-    def attack(self, target):
-        damage = self.power
-        target.hp -= damage
-        print(f"{self.name} атакует {target.name} и наносит {damage} урона!")
+    # Метод класса для получения информации
+    def info(self):
+        return f"""Имя твоего покеомона: {self.name}
+Cила покемона: {self.power}
+Здоровье покемона: {self.hp}"""
+
+    # Метод класса для получения картинки покемона
+    def show_img(self):
+        return self.img
+    
+    def attack(self, enemy):
+        if isinstance(enemy, Wizard):
+            chance = randint(1,5)
+            if chance == 1:
+                return "Покемон-волшебник применил щит в сражении"
+        if enemy.hp > self.power:
+            enemy.hp -= self.power
+            return f"""Сражение @{self.pokemon_trainer} с @{enemy.pokemon_trainer}
+Здоровье @{enemy.pokemon_trainer} теперь {enemy.hp}"""
+        else:
+            enemy.hp = 0
+            return f"Победа @{self.pokemon_trainer} над @{enemy.pokemon_trainer}! "
 
 class Wizard(Pokemon):
-    def __init__(self, pokemon_trainer):
-        super().__init__(pokemon_trainer)
-        self.mana = randint(30, 70)
+  pass
 
-    def attack(self, target):
-        if self.mana >= 15:
-            damage = self.power + self.mana // 5
-            target.hp -= damage
-            self.mana -= 15
-            print(f"{self.name} (Волшебник) атакует магией и наносит {damage} урона!")
-        else:
-            print(f"{self.name} (Волшебник) использует обычную атаку.")
-            super().attack(target)
 
 class Fighter(Pokemon):
-    def __init__(self, pokemon_trainer):
-        super().__init__(pokemon_trainer)
-        self.stamina = randint(40, 80)
-
-    def attack(self, target):
-        if self.stamina >= 20:
-            damage = self.power * 1.2
-            target.hp -= damage
-            self.stamina -= 20
-            print(f"{self.name} (Боец) использует мощный удар и наносит {damage} урона!")
-        else:
-            print(f"{self.name} (Боец) использует обычную атаку.")
-            super().attack(target)
+    def attack(self, enemy):
+        super_power = randint(5,15)
+        self.power += super_power
+        result = super().attack(enemy)
+        self.power -= super_power
+        return result + f"\nБоец применил супер-атаку силой:{super_power} "
